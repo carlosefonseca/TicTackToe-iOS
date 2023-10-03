@@ -5,55 +5,79 @@
 //  Created by Carlos Fonseca on 28/09/2023.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    var model = Board()
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
+        VStack {
+            Spacer()
+            Text(model.gameStatus)
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+            Grid(alignment: .center, horizontalSpacing: 0, verticalSpacing: 0) {
+                ForEach(0 ... 2, id: \.self) { row in
+                    GridRow {
+                        ForEach(0 ... 2, id: \.self) { col in
+                            HStack(spacing: 0) {
+                                ExtractedView(model: model, row: row, col: col)
+                                if col < 2 {
+                                    Rectangle().frame(width: 2)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 130).contentShape(Rectangle())
+                    .font(.largeTitle)
+                    if row < 2 {
+                        Rectangle().frame(height: 2)
+                    }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+                }
             }
+            Spacer()
         }
+        .padding()
+        .background {
+            if model.isVictory {
+                model.currentPlay.color.opacity(0.5)
+            } else {
+                Color.clear
+            }
+        }.ignoresSafeArea()
+
     }
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    ContentView(model: Board(boardData: [0, 1, nil, nil, nil, nil, nil, nil, nil]))
+}
+
+struct ExtractedView: View {
+    init(model: Board, row: Int, col: Int) {
+        self.model = model
+        self.row = row
+        self.col = col
+        self.cell = model.cell(row: row, col: col)
+    }
+
+    let model: Board
+    let row: Int
+    let col: Int
+    let cell: Cell
+
+    var body: some View {
+        Button(action: {
+            model.play(row: row, col: col)
+        }, label: {
+            Text(cell.text ?? "")
+                .foregroundStyle(.regularMaterial)
+                .font(.system(size: 100, weight: .bold, design: .rounded))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    Rectangle().foregroundColor(cell.color)
+                )
+        }).disabled(cell.value != nil && model.isVictory == false)
+    }
 }
