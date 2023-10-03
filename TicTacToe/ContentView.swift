@@ -51,7 +51,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(model: Board(boardData: [0, 1, nil, nil, nil, nil, nil, nil, nil]))
+    ContentView(model: Board(boardData: [.circle, .cross, nil, nil, nil, nil, nil, nil, nil]))
 }
 
 struct ExtractedView: View {
